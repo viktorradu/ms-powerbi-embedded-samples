@@ -52,6 +52,6 @@ For example:
 2. Open http://localhost:3000/single-page-report.html
 
 ## Lab
-Use lab.json for add custom code to implement:
+Use lab.json to implement:
  - pipeConfig: any changes to the embed config before embedding
  - bind: any code to run after embedding. e.g subscribe to report events
