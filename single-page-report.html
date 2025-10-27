@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <script src="node_modules/powerbi-client/dist/powerbi.js"></script>
+		<script src="lab.js"></script>
+        <script type="text/javascript" src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script>
+    </head>
+    <body>
+        <div>Embedding demo</div>
+        <div id="embedContainer"></div>
+        <script>
+            const scopes = [
+                "https://analysis.windows.net/powerbi/api/Report.Read.All",
+                "https://analysis.windows.net/powerbi/api/Dataset.Read.All"
+            ];
+
+            const authConfig = {
+                auth: {
+                    authority: "https://login.microsoftonline.com/" + pbilab.tenantId,
+                    clientId: pbilab.clientId
+                },
+                cache: {
+                    cacheLocation: "localStorage",
+                    storeAuthStateInCookie: true
+                },
+            };
+
+            const msalInstance = new msal.PublicClientApplication(authConfig);
+
+            async function doEmbed(token){
+
+                let models = window['powerbi-client'].models;
+                let reportId = pbilab.reportId;
+                let config = {
+                    accessToken: token,
+                    embedUrl: "https://app.powerbi.com/reportEmbed?reportId=" + reportId,
+                    id: reportId,
+                    tokenType: models.TokenType.Aad,
+                    type: 'report',
+					permissions: models.Permissions.All,
+					viewMode: models.ViewMode.View,
+                };
+                let container = document.getElementById('embedContainer');
+
+				pbilab.pipeConfig(config);
+
+                report = powerbi.embed(container, config);
+				
+				pbilab.bind(report);
+            }
+
+            async function doLogin(){
+                const request = {
+                    scopes: scopes,
+					account: pbilab.userUpn,
+                    redirectUri: window.location.href
+                }
+
+                let token = null;
+
+                await msalInstance.handleRedirectPromise();
+
+                try {
+                    const loginResponse = await msalInstance.acquireTokenSilent(request);
+                    token = loginResponse.accessToken;
+                } catch (err) {
+                    if (err) {
+                        const loginResponse = await msalInstance.loginRedirect(request).catch(error => {
+                            console.log(error);
+                        });
+                    } else {
+                        console.log(err);
+                    }
+                }
+
+                if(token){
+                    doEmbed(token);
+                }
+            }
+
+            doLogin();
+        </script>
+    </body>
+</html>
